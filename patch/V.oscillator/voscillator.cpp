@@ -16,12 +16,14 @@ Voscillator::Voscillator(DaisyPatch &patch, float sampleRate):
 	randomGenerator.Init();
 	click = 0;
 
-	log.Init();
+	ui = new UI(std::string("V.oscillator 0.01"), m_patch);
+	ui->CreateMenuItem(std::string("RND FineTune"));
+	ui->CreateMenuItem(std::string("RND Pan"));
 }
 
 void Voscillator::AudioCallback(AudioHandle::OutputBuffer out, size_t size)
 {
-	float sig, currentOutputL, currentOutputR;
+	float sig, currentOutputL, currentOutputR, nextFreq;
 	uint32_t currentCycleSmp = 0;
 	uint16_t mainSmpNb = 0;
 	uint16_t smpPerOsc = 0;
@@ -29,14 +31,12 @@ void Voscillator::AudioCallback(AudioHandle::OutputBuffer out, size_t size)
 
 	// Read Knobs
 	UpdateControl();
+	// Process and filter 1V/Octave input
 	mainFreq = (freqctrl.Process() + finectrl.Process());
 	mainFreq = powf(2.f, mainFreq) * 55; // get freq from V
-	mainSmpNb = mainFreq / sampleRate;
-	smpPerOsc = mainSmpNb / NB_OSC;
 
-	// std::string str  = "pouette";
-    // char*       cstr = &str[0];
-	// log.Transmit(cstr, 8);
+	mainSmpNb = sampleRate / mainFreq;
+	smpPerOsc = mainSmpNb / NB_OSC;
 
 	for(uint i=0 ; i<NB_OSC ; i++){
 		osc[i].SetFreq(mainFreq);
@@ -52,6 +52,10 @@ void Voscillator::AudioCallback(AudioHandle::OutputBuffer out, size_t size)
 		currentOsc = currentCycleSmp / smpPerOsc;
 
 		for(uint j=0 ; j<NB_OSC ; j++){
+			// TODO better reset technique
+			// if(currentCycleSmp == 0){
+			// 	osc[j].Reset();
+			// }
 			sig = osc[j].Process();
 			if(j == currentOsc){
 				currentOutputL = sig * (1.f - osc[j].GetPan());
@@ -74,11 +78,14 @@ void Voscillator::UpdateControl()
     }else if(currentMenuItem > 3){
         currentMenuItem = 3;
     }
+
+	ui->SetCurrentMenuItem(currentMenuItem);
 }
 
 // TODO refactor this !
 void Voscillator::UpdateOled()
 {
+	// ui->Display();
     m_patch.display.Fill(false);
 
 	// Title
@@ -96,7 +103,7 @@ void Voscillator::UpdateOled()
 	if(currentMenuItem == 0){
 		font0 = &Font_7x10_flipped;
 		if(m_patch.encoder.Pressed()){
-			for(uint i=0 ; i<NB_OSC ; i++){
+			for(uint i=0 ; i<1 ; i++){
 				osc[i].SetFineTune(randomGenerator.Process() * 0.5f);
 			}
 		}
@@ -119,13 +126,15 @@ void Voscillator::UpdateOled()
 
 	m_patch.display.SetCursor(0, 34);
 	std::string str2;
-	str2 = "Freq: " ;
-	//  + std::to_string(mainFreq);
-	// std::string str2 = std::to_string(mainFreq);
+	// str2 = "Freq: " ;
+	str2 = "debug:" + std::to_string(static_cast<uint32_t>((sampleRate / mainFreq) / NB_OSC));
     char*       cstr2 = &str2[0];
 	FontDef* font2 = &Font_7x10;
 	if(currentMenuItem == 2){
 		font2 = &Font_7x10_flipped;
+		if(m_patch.encoder.Pressed()){
+			osc[0].SetAmp(0);
+		}
 	}
     m_patch.display.WriteString(cstr2, *font2, true);
 	

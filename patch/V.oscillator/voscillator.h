@@ -8,7 +8,9 @@
 #include "daisy_patch.h"
 
 #include "mircosc.h"
+#include "UI.h"
 
+#define PATCH_NAME "V.oscillator 0.01"
 #define NB_OSC 8
 
 using namespace daisy;
@@ -24,15 +26,17 @@ class Voscillator{
 
     private:
         DaisyPatch &m_patch;
+
+        microsc osc[NB_OSC];
+        
         float sampleRate;
+        uint32_t click;
         float mainFreq, mainSmpNb, smpPerOsc;
         Parameter  freqctrl, finectrl;
-        microsc osc[NB_OSC];
+        
         WhiteNoise randomGenerator;
 
-        uint32_t click;
-
-        LoggerImpl<LOGGER_INTERNAL> log;
+        UI* ui;
 
         void UpdateControl();
 };
