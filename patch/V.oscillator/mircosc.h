@@ -21,6 +21,10 @@ class microsc{
             osc.Init(sampleRate);
         }
 
+        void Reset(){
+            osc.Reset();
+        }
+
         void SetFreq(float freq){
             currentFreq = freq * ratio + fineTune;
             osc.SetFreq(currentFreq);
