@@ -23,19 +23,32 @@ void UI::Display(){
     m_patch.display.WriteString(cstr, Font_7x10, true);
 	m_patch.display.DrawLine(0,10, m_patch.display.Width(), 10, true);
 
-	// // Menu
+	// Menu
     for(uint8_t i=0 ; i<nbItem ; i++){
 	    m_patch.display.SetCursor(0, itemList[i]->yPosition);
-        str = itemList[i]->name[0];
+        str = itemList[i]->name;
         m_patch.display.WriteString(cstr, *itemList[i]->currentFont, true);
     }
 
     m_patch.display.Update();
 }
 
-void UI::SetCurrentMenuItem(uint8_t item){
+void UI::IncrementMenuItem(int8_t increment){
+    // reset font
     itemList[currentItem]->currentFont = &Font_7x10;
 
-    currentItem = item;
-    itemList[item]->currentFont = &Font_7x10_flipped;
+    //update current item
+    currentItem += increment;
+    if(currentItem < 0){
+        currentItem = 0;
+    }else if(currentItem > nbItem - 1){
+        currentItem = nbItem - 1;
+    }
+
+    // set flipped font
+    itemList[currentItem]->currentFont = &Font_7x10_flipped;
+}
+
+void UI::EncoderPressed(){
+    
 }

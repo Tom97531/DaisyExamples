@@ -39,6 +39,8 @@ class Voscillator{
         UI* ui;
 
         void UpdateControl();
+
+        void CreateUI();
 };
 
 
