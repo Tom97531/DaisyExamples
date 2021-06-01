@@ -2,6 +2,7 @@
 #define UI_H
 
 #include <string>
+#include <functional>
 
 #include "daisy.h"
 #include "daisy_patch.h"
@@ -16,26 +17,23 @@ class UI{
 
         class Item{
             public:
-                void Init(std::string name, uint8_t yPos){
+                void Init(std::string name, uint8_t yPos, std::function<void()> function){
                     this->name = name;
                     yPosition = yPos;
                     currentFont = &Font_7x10;
+                    action = function;
                 }
 
                 std::string name;
                 uint8_t yPosition;
                 FontDef* currentFont;
 
-                // use lambda shit
-                // https://stackoverflow.com/questions/9186510/how-can-i-store-a-lambda-expression-as-a-field-of-a-class-in-c11#9186537
-                void Execute(){
-
-                }
+                std::function<void()> action;
         };
     
         void Display();
 
-        void CreateMenuItem(std::string name);
+        void CreateMenuItem(std::string name, std::function<void()> function);
 
         void IncrementMenuItem(int8_t item);
         void EncoderPressed();
