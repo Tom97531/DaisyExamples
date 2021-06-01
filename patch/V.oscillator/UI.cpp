@@ -6,9 +6,9 @@ UI::UI(std::string title, DaisyPatch& patch){
     nbItem = 0;
 }
 
-void UI::CreateMenuItem(std::string name){
+void UI::CreateMenuItem(std::string name, std::function<void()> function){
     itemList[nbItem] = new Item();
-    itemList[nbItem]->Init(name, 12 + nbItem*11);
+    itemList[nbItem]->Init(name, 12 + nbItem*11, function);
     nbItem++;
 }
 
@@ -50,5 +50,5 @@ void UI::IncrementMenuItem(int8_t increment){
 }
 
 void UI::EncoderPressed(){
-    
+    itemList[currentItem]->action();
 }
