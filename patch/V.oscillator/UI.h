@@ -19,6 +19,7 @@ class UI{
                 void Init(std::string name, uint8_t yPos){
                     this->name = name;
                     yPosition = yPos;
+                    currentFont = &Font_7x10;
                 }
 
                 std::string name;
@@ -26,6 +27,7 @@ class UI{
                 FontDef* currentFont;
 
                 // use lambda shit
+                // https://stackoverflow.com/questions/9186510/how-can-i-store-a-lambda-expression-as-a-field-of-a-class-in-c11#9186537
                 void Execute(){
 
                 }
@@ -34,10 +36,12 @@ class UI{
         void Display();
 
         void CreateMenuItem(std::string name);
-        void SetCurrentMenuItem(uint8_t item);
+
+        void IncrementMenuItem(int8_t item);
+        void EncoderPressed();
 
     private:
-        uint8_t currentItem;
+        int8_t currentItem;
         uint8_t nbItem;
         DaisyPatch m_patch;
         std::string Title;
