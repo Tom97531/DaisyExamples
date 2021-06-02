@@ -8,6 +8,10 @@
 #include "daisy_patch.h"
 #include "daisysp.h"
 
+#include "Item.h"
+
+#define ITEM_WINDOW_SIZE 4
+
 using namespace daisy;
 using namespace daisysp;
 
@@ -15,25 +19,9 @@ class UI{
     public:
         UI(std::string title, DaisyPatch& patch);
 
-        class Item{
-            public:
-                void Init(std::string name, uint8_t yPos, std::function<void()> function){
-                    this->name = name;
-                    yPosition = yPos;
-                    currentFont = &Font_7x10;
-                    action = function;
-                }
-
-                std::string name;
-                uint8_t yPosition;
-                FontDef* currentFont;
-
-                std::function<void()> action;
-        };
-    
         void Display();
 
-        void CreateMenuItem(std::string name, std::function<void()> function);
+        void CreateMenuItem(Item* menuItem);
 
         void IncrementMenuItem(int8_t item);
         void EncoderPressed();
@@ -44,6 +32,8 @@ class UI{
         DaisyPatch m_patch;
         std::string Title;
         Item* itemList[15];
+
+        
 };
 
 #endif // UI_H
