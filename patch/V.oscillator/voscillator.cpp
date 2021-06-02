@@ -6,6 +6,7 @@ Voscillator::Voscillator(DaisyPatch &patch, float sampleRate):
     currentMenuItem(0),
     sampleRate(sampleRate)
 {
+	CreateUI();
 	freqctrl.Init(patch.controls[patch.CTRL_1], 0.f, 5.0f, Parameter::LINEAR);
 	finectrl.Init(patch.controls[patch.CTRL_2], 0.f, 0.5f, Parameter::LINEAR);
 
@@ -15,8 +16,6 @@ Voscillator::Voscillator(DaisyPatch &patch, float sampleRate):
 
 	randomGenerator.Init();
 	click = 0;
-
-	CreateUI();
 }
 
 void Voscillator::AudioCallback(AudioHandle::OutputBuffer out, size_t size)
@@ -85,22 +84,28 @@ void Voscillator::UpdateOled()
 void Voscillator::CreateUI(){
 	ui = new UI(std::string("V.oscillator 0.1"), m_patch);
 
-	ui->CreateMenuItem(std::string("RND FineTune"), [=] {
+	ui->CreateMenuItem(new Item(std::string("RND FineTune"), [=] {
 			for(uint i=0 ; i<1 ; i++){
 				osc[i].SetFineTune(randomGenerator.Process() * 0.5f);
-			}    
-		});
-	ui->CreateMenuItem(std::string("RND Pan"), [=] {
+			}
+		}));
+	ui->CreateMenuItem(new ParamItem(std::string("FineTune"), [=] {
+			for(uint i=0 ; i<1 ; i++){
+				osc[i].SetFineTune(randomGenerator.Process() * 0.5f);
+			}
+		}, -5., 5.));
+	ui->CreateMenuItem(new Item(std::string("RND Pan"), [=] {
 			for(uint i=0 ; i<1 ; i++){
 				osc[i].SetPan(randomGenerator.Process() * 0.5f);
-			}    
-		});
-	ui->CreateMenuItem(std::string("RND Amp"), [=] {
+			}
+		}));
+	ui->CreateMenuItem(new Item(std::string("RND Amp"), [=] {
 			for(uint i=0 ; i<1 ; i++){
 				osc[i].SetAmp(randomGenerator.Process() * 0.5f);
-			}    
-		});
-	ui->CreateMenuItem(std::string("To Bootloader"), [=] {
+			}
+		}));
+	ui->CreateMenuItem(new Item(std::string("To Bootloader"), [=] {
+		// TODO: not reseting for some reason
 			daisy::System::ResetToBootloader();
-		});
+		}));
 }
