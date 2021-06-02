@@ -4,16 +4,16 @@ UI::UI(std::string title, DaisyPatch& patch){
     m_patch = patch;
     Title = title;
     nbItem = 0;
+    currentItem = 0;
 }
 
-void UI::CreateMenuItem(std::string name, std::function<void()> function){
-    itemList[nbItem] = new Item();
-    itemList[nbItem]->Init(name, 12 + nbItem*11, function);
+void UI::CreateMenuItem(Item* menuItem){
+    itemList[nbItem] = menuItem;
     nbItem++;
 }
 
-
 void UI::Display(){
+    uint8_t firstItem = 0;
     m_patch.display.Fill(false);
 
 	// Title
@@ -24,8 +24,15 @@ void UI::Display(){
 	m_patch.display.DrawLine(0,10, m_patch.display.Width(), 10, true);
 
 	// Menu
-    for(uint8_t i=0 ; i<nbItem ; i++){
-	    m_patch.display.SetCursor(0, itemList[i]->yPosition);
+    // set y position for viewable items
+    if(currentItem >= ITEM_WINDOW_SIZE){
+        firstItem = currentItem - ITEM_WINDOW_SIZE + 1;
+        // if(firstItem > )
+    }
+
+    // display items
+    for(uint8_t i=firstItem ; i<ITEM_WINDOW_SIZE+firstItem && i<nbItem ; i++){
+	    m_patch.display.SetCursor(0, 12 + (i-firstItem)*10);
         str = itemList[i]->name;
         m_patch.display.WriteString(cstr, *itemList[i]->currentFont, true);
     }
