@@ -51,9 +51,9 @@ void Voscillator::AudioCallback(AudioHandle::OutputBuffer out, size_t size)
 
 		for(uint j=0 ; j<NB_OSC ; j++){
 			// TODO better reset technique
-			// if(currentCycleSmp == 0){
-			// 	osc[j].Reset();
-			// }
+			if(currentCycleSmp == 0){
+				osc[j].Reset();
+			}
 			sig = osc[j].Process();
 			if(j == currentOsc){
 				currentOutputL = sig * (1.f - osc[j].GetPan());
@@ -69,7 +69,7 @@ void Voscillator::AudioCallback(AudioHandle::OutputBuffer out, size_t size)
 void Voscillator::UpdateControl()
 {
     m_patch.ProcessAllControls();
-	ui->IncrementMenuItem(m_patch.encoder.Increment());
+	ui->IncrementMenuItem(m_patch.encoder.Increment(), click);
 
 	if(m_patch.encoder.Pressed()){
 		ui->EncoderPressed();
@@ -78,7 +78,7 @@ void Voscillator::UpdateControl()
 
 void Voscillator::UpdateOled()
 {
-	ui->Display();
+	ui->Display(click);
 }
 
 void Voscillator::CreateUI(){
@@ -107,5 +107,12 @@ void Voscillator::CreateUI(){
 	ui->CreateMenuItem(new Item(std::string("To Bootloader"), [=] {
 		// TODO: not reseting for some reason
 			daisy::System::ResetToBootloader();
+		}));	
+	ui->CreateMenuItem(new Item(std::string("turn off OLED"), [=] {
+			m_patch.display.Fill(false);
+			m_patch.display.Update();
+			ui->oledOn = false;
 		}));
 }
+
+//str2 = "debug:" + std::to_string(static_cast<uint32_t>((sampleRate / mainFreq) / NB_OSC));
