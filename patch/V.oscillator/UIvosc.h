@@ -1,5 +1,5 @@
-#ifndef UI_H
-#define UI_H
+#ifndef UIvosc_H
+#define UIvosc_H
 
 #include <string>
 #include <functional>
@@ -16,9 +16,9 @@
 using namespace daisy;
 using namespace daisysp;
 
-class UI{
+class UIvosc{
     public:
-        UI(std::string title, DaisyPatch& patch);
+        UIvosc(std::string title, DaisyPatch* patch);
 
         void Display(uint32_t click);
 
@@ -32,7 +32,7 @@ class UI{
     private:
         int8_t currentItem;
         uint8_t nbItem;
-        DaisyPatch m_patch;
+        DaisyPatch *m_patch;
         std::string Title;
         Item* itemList[15];
         uint32_t turnOffOledDelay;

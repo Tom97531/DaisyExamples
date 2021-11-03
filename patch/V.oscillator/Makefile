@@ -2,7 +2,7 @@
 TARGET = V.oscillator
 
 # Sources
-CPP_SOURCES = V.oscillator_main.cpp voscillator.cpp UI.cpp
+CPP_SOURCES = V.oscillator_main.cpp voscillator.cpp UIvosc.cpp
 
 # Library Locations
 LIBDAISY_DIR = ../../libdaisy

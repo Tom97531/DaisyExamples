@@ -1,14 +1,14 @@
 #include "voscillator.h"
-#include "UI.h"
+#include "UIvosc.h"
 
-Voscillator::Voscillator(DaisyPatch &patch, float sampleRate):
+Voscillator::Voscillator(DaisyPatch *patch, float sampleRate):
     m_patch(patch),
     currentMenuItem(0),
     sampleRate(sampleRate)
 {
 	CreateUI();
-	freqctrl.Init(patch.controls[patch.CTRL_1], 0.f, 5.0f, Parameter::LINEAR);
-	finectrl.Init(patch.controls[patch.CTRL_2], 0.f, 0.5f, Parameter::LINEAR);
+	freqctrl.Init(patch->controls[patch->CTRL_1], 0.f, 5.0f, Parameter::LINEAR);
+	finectrl.Init(patch->controls[patch->CTRL_2], 0.f, 0.5f, Parameter::LINEAR);
 
 	for(uint i=0 ; i<NB_OSC ; i++){
 		osc[i].Init(sampleRate);
@@ -33,7 +33,8 @@ void Voscillator::AudioCallback(AudioHandle::OutputBuffer out, size_t size)
 	mainFreq = (freqctrl.Process() + finectrl.Process());
 	mainFreq = powf(2.f, mainFreq) * 55; // get freq from V
 
-	mainSmpNb = sampleRate / mainFreq;
+	mainSmpNb = sampleRate / (mainFreq);
+	// mainSmpNb = sampleRate / (TWOPI_F * mainFreq);
 	smpPerOsc = mainSmpNb / NB_OSC;
 
 	for(uint i=0 ; i<NB_OSC ; i++){
@@ -50,10 +51,6 @@ void Voscillator::AudioCallback(AudioHandle::OutputBuffer out, size_t size)
 		currentOsc = currentCycleSmp / smpPerOsc;
 
 		for(uint j=0 ; j<NB_OSC ; j++){
-			// TODO better reset technique
-			if(currentCycleSmp == 0){
-				osc[j].Reset();
-			}
 			sig = osc[j].Process();
 			if(j == currentOsc){
 				currentOutputL = sig * (1.f - osc[j].GetPan());
@@ -68,10 +65,10 @@ void Voscillator::AudioCallback(AudioHandle::OutputBuffer out, size_t size)
 
 void Voscillator::UpdateControl()
 {
-    m_patch.ProcessAllControls();
-	ui->IncrementMenuItem(m_patch.encoder.Increment(), click);
+    m_patch->ProcessAllControls();
+	ui->IncrementMenuItem(m_patch->encoder.Increment(), click);
 
-	if(m_patch.encoder.Pressed()){
+	if(m_patch->encoder.Pressed()){
 		ui->EncoderPressed();
 	}
 }
@@ -82,7 +79,7 @@ void Voscillator::UpdateOled()
 }
 
 void Voscillator::CreateUI(){
-	ui = new UI(std::string("V.oscillator 0.1"), m_patch);
+	ui = new UIvosc(std::string("V.oscillator 0.1"), m_patch);
 
 	ui->CreateMenuItem(new Item(std::string("RND FineTune"), [=] {
 			for(uint i=0 ; i<1 ; i++){
@@ -109,8 +106,8 @@ void Voscillator::CreateUI(){
 			daisy::System::ResetToBootloader();
 		}));	
 	ui->CreateMenuItem(new Item(std::string("turn off OLED"), [=] {
-			m_patch.display.Fill(false);
-			m_patch.display.Update();
+			m_patch->display.Fill(false);
+			m_patch->display.Update();
 			ui->oledOn = false;
 		}));
 }
