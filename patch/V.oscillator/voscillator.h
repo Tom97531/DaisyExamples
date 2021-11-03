@@ -8,7 +8,6 @@
 #include "daisy_patch.h"
 
 #include "mircosc.h"
-#include "UIvosc.h"
 
 #define PATCH_NAME "V.oscillator 0.01"
 #define NB_OSC 8
@@ -18,16 +17,14 @@ using namespace daisysp;
 
 class Voscillator{
     public:
-        int8_t currentMenuItem;
-
         Voscillator(DaisyPatch *patch, float sampleRate);
         void AudioCallback(AudioHandle::OutputBuffer out, size_t size);
-        void UpdateOled();
 
+        microsc osc[NB_OSC];
+        
     private:
         DaisyPatch *m_patch;
 
-        microsc osc[NB_OSC];
         
         float sampleRate;
         uint32_t click;
@@ -35,12 +32,6 @@ class Voscillator{
         Parameter  freqctrl, finectrl;
         
         WhiteNoise randomGenerator;
-
-        UIvosc* ui;
-
-        void UpdateControl();
-
-        void CreateUI();
 };
 
 
