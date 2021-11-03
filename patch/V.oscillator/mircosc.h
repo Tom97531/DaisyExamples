@@ -12,13 +12,13 @@ class microsc{
     public:
         Oscillator osc;
         float pan = 0.5f; // 0 L / 0.5 C / 1.0R
-        float amp = 0.5f;
         float ratio = 1.f; // power of 2
         float fineTune = 0.f;
         float currentFreq = 1.f;
 
         void Init(float sampleRate){
             osc.Init(sampleRate);
+            osc.SetAmp(0.9);
         }
 
         void Reset(){
@@ -43,7 +43,7 @@ class microsc{
         }
 
         void SetAmp(float amp){
-            this->amp = amp;
+            osc.SetAmp(amp);
         }
 
         void SetFineTune(float ft){
