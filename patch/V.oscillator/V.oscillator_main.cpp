@@ -28,7 +28,7 @@ int main(void)
 	patch.SetAudioSampleRate(SaiHandle::Config::SampleRate::SAI_96KHZ);
 	float sampleRate = patch.AudioSampleRate();
 
-	Vosc = new Voscillator(patch, sampleRate);
+	Vosc = new Voscillator(&patch, sampleRate);
 
 	patch.StartAdc();
 	patch.StartAudio(AudioCallback);
