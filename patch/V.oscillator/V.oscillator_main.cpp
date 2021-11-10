@@ -19,16 +19,16 @@ FullScreenItemMenu FineTuneMenu;
 FullScreenItemMenu PanMenu;
 UiEventQueue       eventQueue;
 
-const int                kNumMainMenuItems = 4;
+const int                kNumMainMenuItems = 5;
 AbstractMenu::ItemConfig mainMenuItems[kNumMainMenuItems];
-const int                kNumVolumeMenuItems = NB_OSC + 1;
-AbstractMenu::ItemConfig VolumeMenuItems[kNumVolumeMenuItems];
 const int                kNumRatioMenuItems = NB_OSC + 1;
 AbstractMenu::ItemConfig RatioMenuItems[kNumRatioMenuItems];
 const int                kNumFineTuneMenuItems = NB_OSC + 1;
 AbstractMenu::ItemConfig FineTuneMenuItems[kNumFineTuneMenuItems];
 const int                kNumPanMenuItems = NB_OSC + 1;
 AbstractMenu::ItemConfig PanMenuItems[kNumPanMenuItems];
+const int                kNumVolumeMenuItems = NB_OSC + 1;
+AbstractMenu::ItemConfig VolumeMenuItems[kNumVolumeMenuItems];
 
 const char* oscStr[] = {"Osc 1", "Osc 2", "Osc 3", "Osc 4", "Osc 5", "Osc 6", "Osc 7", "Osc 8"};
 const char* ratioStr[] = {"0.25", "0.5", "1", "2", "4", "8"};
@@ -37,6 +37,8 @@ MappedFloatValue *volumeValue[NB_OSC];
 MappedStringListValue *ratioValue[NB_OSC];
 MappedFloatValue *fineTuneValue[NB_OSC];
 MappedFloatValue *panValue[NB_OSC];
+
+bool hardSyncToggle;
 
 void InitUi()
 {
@@ -58,7 +60,7 @@ void InitUi()
     oledDisplayDescriptor.id_     = canvasOledDisplay; // the unique ID
     oledDisplayDescriptor.handle_ = &patch.display; // a pointer to the display
     oledDisplayDescriptor.updateRateMs_  = 50;   // 50ms == 20Hz
-    oledDisplayDescriptor.screenSaverTimeOut = 30000;
+    oledDisplayDescriptor.screenSaverTimeOut = 60000;
     oledDisplayDescriptor.clearFunction_ = &ClearCanvas;
     oledDisplayDescriptor.flushFunction_ = &FlushCanvas;
 
@@ -75,20 +77,24 @@ void InitUiPages()
     // ====================================================================
 
     mainMenuItems[0].type = daisy::AbstractMenu::ItemType::openUiPageItem;
-    mainMenuItems[0].text = "Volume";
-    mainMenuItems[0].asOpenUiPageItem.pageToOpen = &VolumeMenu;
+    mainMenuItems[0].text = "Ratio";
+    mainMenuItems[0].asOpenUiPageItem.pageToOpen = &RatioMenu;
 
     mainMenuItems[1].type = daisy::AbstractMenu::ItemType::openUiPageItem;
-    mainMenuItems[1].text = "Ratio";
-    mainMenuItems[1].asOpenUiPageItem.pageToOpen = &RatioMenu;
+    mainMenuItems[1].text = "Fine Tune";
+    mainMenuItems[1].asOpenUiPageItem.pageToOpen = &FineTuneMenu;
 
     mainMenuItems[2].type = daisy::AbstractMenu::ItemType::openUiPageItem;
-    mainMenuItems[2].text = "Fine Tune";
-    mainMenuItems[2].asOpenUiPageItem.pageToOpen = &FineTuneMenu;
+    mainMenuItems[2].text = "Pan";
+    mainMenuItems[2].asOpenUiPageItem.pageToOpen = &PanMenu;
 
     mainMenuItems[3].type = daisy::AbstractMenu::ItemType::openUiPageItem;
-    mainMenuItems[3].text = "Pan";
-    mainMenuItems[3].asOpenUiPageItem.pageToOpen = &PanMenu;
+    mainMenuItems[3].text = "Volume";
+    mainMenuItems[3].asOpenUiPageItem.pageToOpen = &VolumeMenu;
+
+    mainMenuItems[4].type = daisy::AbstractMenu::ItemType::checkboxItem;
+    mainMenuItems[4].text = "Hard Sync";
+    mainMenuItems[4].asCheckboxItem.valueToModify = &hardSyncToggle;
 
     mainMenu.Init(mainMenuItems, kNumMainMenuItems);
 
@@ -174,9 +180,13 @@ static void AudioCallback(AudioHandle::InputBuffer  in,
 	patch.ProcessAllControls();
 	GenerateUiEvents();
 
+	Vosc->setHardSync(hardSyncToggle);
+
 	// set osc
 	for(int i=0 ; i<NB_OSC ; i++){
 		Vosc->osc[i].SetAmp(volumeValue[i]->Get());
+		Vosc->osc[i].SetFineTune(fineTuneValue[i]->Get());
+		Vosc->osc[i].SetPan(panValue[i]->Get());
 		if(ratioValue[i]->GetIndex() == 0){
 			Vosc->osc[i].SetRatio(0.25);
 		}else if(ratioValue[i]->GetIndex() == 1){
@@ -190,8 +200,6 @@ static void AudioCallback(AudioHandle::InputBuffer  in,
 		}else if(ratioValue[i]->GetIndex() == 5){
 			Vosc->osc[i].SetRatio(8.0);
 		}
-		Vosc->osc[i].SetFineTune(fineTuneValue[i]->Get());
-		Vosc->osc[i].SetPan(panValue[i]->Get());
 	}
 
 	Vosc->AudioCallback(out, size);
