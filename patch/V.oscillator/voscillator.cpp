@@ -17,44 +17,38 @@ Voscillator::Voscillator(DaisyPatch *patch, float sampleRate):
 
 void Voscillator::AudioCallback(AudioHandle::OutputBuffer out, size_t size)
 {
-	float sig; 
-	float currentOutputL = 0;
-	float currentOutputR = 0;
-	uint16_t mainSmpNb;
-	uint16_t smpPerOsc;
-	uint8_t currentOsc;
+	float sig;
+	uint32_t currentOsc;
 
-	// Process and filter 1V/Octave input
+	// Process 1V/Octave input
 	mainFreq = (freqctrl.Process() + finectrl.Process());
 	mainFreq = powf(2.f, mainFreq) * 55; // get freq from V
 
-	mainSmpNb = sampleRate / (mainFreq);
+	mainSmpNb = sampleRate / mainFreq;
 	smpPerOsc = mainSmpNb / NB_OSC;
-
-	for(uint i=0 ; i<NB_OSC ; i++){
-		osc[i].SetFreq(mainFreq);
-	}
 
 	// Process audio
 	for(size_t i = 0; i < size; i++)
     {
 		click++;
 		if(click >= mainSmpNb){
-			click = click - mainSmpNb;
-		}
-
-		// compute switch
-		currentOsc = click / smpPerOsc;
-
-		for(uint j=0 ; j<NB_OSC ; j++){
-			sig = osc[j].Process();
-			if(currentOsc == j){
-				currentOutputL = sig * (1.f - osc[j].GetPan());
-				currentOutputR = sig * osc[j].GetPan();
+			click = 0;
+			if(hardSync){
+				for(uint j=0 ; j<NB_OSC ; j++){
+					osc[j].Reset();
+				}
 			}
 		}
 
-		out[0][i] = currentOutputL;
-		out[1][i] = currentOutputR;
+		currentOsc = click / smpPerOsc;
+
+		for(uint j=0 ; j<NB_OSC ; j++){
+			osc[j].SetFreq(mainFreq);
+			sig = osc[j].Process();
+			if(currentOsc == j){
+				out[0][i] = sig * (1.f - osc[j].GetPan());
+				out[1][i] = sig * osc[j].GetPan();
+			}
+		}
 	}
 }
