@@ -26,7 +26,7 @@ class microsc{
         }
 
         void SetFreq(float freq){
-            currentFreq = freq * ratio + fineTune;
+            currentFreq = (freq + fineTune) * ratio;
             osc.SetFreq(currentFreq);
         }
 
@@ -47,7 +47,11 @@ class microsc{
         }
 
         void SetFineTune(float ft){
-            fineTune = powf(2.f, ft) * 55; // get freq from V;
+            if(ft != 0){
+                fineTune = powf(2.f, ft) * 55; // get freq from V;
+            }else{
+                fineTune = 0;
+            }
         }
 
         float Process(){

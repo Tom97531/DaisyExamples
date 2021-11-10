@@ -21,14 +21,17 @@ class Voscillator{
         void AudioCallback(AudioHandle::OutputBuffer out, size_t size);
 
         microsc osc[NB_OSC];
+
+        void setHardSync(bool on){hardSync = on;};
+        bool getHardync(){return hardSync;};
         
     private:
         DaisyPatch *m_patch;
-
         
         float sampleRate;
         uint32_t click;
         float mainFreq, mainSmpNb, smpPerOsc;
+        bool hardSync = false;
         Parameter  freqctrl, finectrl;
         
         WhiteNoise randomGenerator;
