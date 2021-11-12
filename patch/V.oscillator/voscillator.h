@@ -17,24 +17,36 @@ using namespace daisysp;
 
 class Voscillator{
     public:
-        Voscillator(DaisyPatch *patch, float sampleRate);
-        void AudioCallback(AudioHandle::OutputBuffer out, size_t size);
+        enum envelopeType{OFF=0, AD, ADSR};
+        class performaceState{
+            public:
+                float pitch;
+                float finePitch;
+
+                bool hardSync;
+
+                envelopeType envType;
+                bool gate;
+                float attack;
+                float decay;
+                float sustain;
+                float release;
+        };
+
+        Voscillator(float sampleRate);
+        void AudioCallback(AudioHandle::OutputBuffer out, size_t size, performaceState state);
 
         microsc osc[NB_OSC];
 
-        void setHardSync(bool on){hardSync = on;};
-        bool getHardync(){return hardSync;};
-        
     private:
-        DaisyPatch *m_patch;
-        
         float sampleRate;
         uint32_t click;
         float mainFreq, mainSmpNb, smpPerOsc;
-        bool hardSync = false;
-        Parameter  freqctrl, finectrl;
         
         WhiteNoise randomGenerator;
+
+        // enveloppe management
+        daisysp::Adsr adsrEnv;
 };
 
 

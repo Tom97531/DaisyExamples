@@ -9,6 +9,9 @@ using namespace daisysp;
 
 DaisyPatch patch;
 Voscillator *Vosc;
+Voscillator::performaceState perfState;
+
+Parameter  freqctrl, finectrl, attackctrl, decayctrl;
 
 daisy::UI ui;
 
@@ -17,9 +20,10 @@ FullScreenItemMenu VolumeMenu;
 FullScreenItemMenu RatioMenu;
 FullScreenItemMenu FineTuneMenu;
 FullScreenItemMenu PanMenu;
+FullScreenItemMenu EnvMenu;
 UiEventQueue       eventQueue;
 
-const int                kNumMainMenuItems = 5;
+const int                kNumMainMenuItems = 6;
 AbstractMenu::ItemConfig mainMenuItems[kNumMainMenuItems];
 const int                kNumRatioMenuItems = NB_OSC + 1;
 AbstractMenu::ItemConfig RatioMenuItems[kNumRatioMenuItems];
@@ -29,14 +33,21 @@ const int                kNumPanMenuItems = NB_OSC + 1;
 AbstractMenu::ItemConfig PanMenuItems[kNumPanMenuItems];
 const int                kNumVolumeMenuItems = NB_OSC + 1;
 AbstractMenu::ItemConfig VolumeMenuItems[kNumVolumeMenuItems];
+const int                kNumEnvMenuItems = 4;
+AbstractMenu::ItemConfig EnvMenuItems[kNumEnvMenuItems];
 
 const char* oscStr[] = {"Osc 1", "Osc 2", "Osc 3", "Osc 4", "Osc 5", "Osc 6", "Osc 7", "Osc 8"};
 const char* ratioStr[] = {"0.25", "0.5", "1", "2", "4", "8"};
+const char* envType[] = {"OFF", "AD", "ADSR"};
 
 MappedFloatValue *volumeValue[NB_OSC];
 MappedStringListValue *ratioValue[NB_OSC];
 MappedFloatValue *fineTuneValue[NB_OSC];
 MappedFloatValue *panValue[NB_OSC];
+MappedIntValue nbRandomizedOsc(0, 8, 0, 1, 1);
+MappedFloatValue sustainValue(0, 1, 1);
+MappedFloatValue releaseValue(0, 5, 0);
+MappedStringListValue envTypeValue(envType, 3, 0);
 
 bool hardSyncToggle;
 
@@ -96,6 +107,10 @@ void InitUiPages()
     mainMenuItems[4].text = "Hard Sync";
     mainMenuItems[4].asCheckboxItem.valueToModify = &hardSyncToggle;
 
+    mainMenuItems[5].type = daisy::AbstractMenu::ItemType::openUiPageItem;
+    mainMenuItems[5].text = "Envelope";
+    mainMenuItems[5].asOpenUiPageItem.pageToOpen = &EnvMenu;
+
     mainMenu.Init(mainMenuItems, kNumMainMenuItems);
 
     // ====================================================================
@@ -125,6 +140,10 @@ void InitUiPages()
 	}
     RatioMenuItems[NB_OSC].type = daisy::AbstractMenu::ItemType::closeMenuItem;
     RatioMenuItems[NB_OSC].text = "Back";
+
+    // RatioMenuItems[NB_OSC+1].type = daisy::AbstractMenu::ItemType::valueItem;
+    // RatioMenuItems[NB_OSC+1].text = "#Rnd osc";
+	// RatioMenuItems[NB_OSC+!].asMappedValueItem.valueToModify = 
 
     RatioMenu.Init(RatioMenuItems, kNumRatioMenuItems);
 
@@ -158,6 +177,26 @@ void InitUiPages()
 
     PanMenu.Init(PanMenuItems, kNumPanMenuItems);
 
+    // ====================================================================
+    // The "Envelope" menu
+    // ====================================================================
+
+    EnvMenuItems[0].type = daisy::AbstractMenu::ItemType::valueItem;
+    EnvMenuItems[0].text = "Env Type";
+    EnvMenuItems[0].asMappedValueItem.valueToModify = &envTypeValue;
+
+    EnvMenuItems[1].type = daisy::AbstractMenu::ItemType::valueItem;
+    EnvMenuItems[1].text = "sustain";
+    EnvMenuItems[1].asMappedValueItem.valueToModify = &sustainValue;
+
+    EnvMenuItems[2].type = daisy::AbstractMenu::ItemType::valueItem;
+    EnvMenuItems[2].text = "release";
+    EnvMenuItems[2].asMappedValueItem.valueToModify = &releaseValue;
+
+    EnvMenuItems[kNumEnvMenuItems-1].type = daisy::AbstractMenu::ItemType::closeMenuItem;
+    EnvMenuItems[kNumEnvMenuItems-1].text = "Back";
+
+    EnvMenu.Init(EnvMenuItems, kNumEnvMenuItems);
 }
 
 void GenerateUiEvents()
@@ -180,9 +219,7 @@ static void AudioCallback(AudioHandle::InputBuffer  in,
 	patch.ProcessAllControls();
 	GenerateUiEvents();
 
-	Vosc->setHardSync(hardSyncToggle);
-
-	// set osc
+	// set micro-osc
 	for(int i=0 ; i<NB_OSC ; i++){
 		Vosc->osc[i].SetAmp(volumeValue[i]->Get());
 		Vosc->osc[i].SetFineTune(fineTuneValue[i]->Get());
@@ -202,7 +239,20 @@ static void AudioCallback(AudioHandle::InputBuffer  in,
 		}
 	}
 
-	Vosc->AudioCallback(out, size);
+    // set general parameters
+    perfState.finePitch = finectrl.Process();
+    perfState.pitch = freqctrl.Process();
+	
+    perfState.hardSync = hardSyncToggle;
+
+    perfState.envType = (Voscillator::envelopeType)envTypeValue.GetIndex();
+    perfState.gate = patch.gate_input[0].State();
+    perfState.attack = attackctrl.Process();
+    perfState.decay = decayctrl.Process();
+    perfState.sustain = sustainValue.Get();
+    perfState.release = releaseValue.Get();
+
+	Vosc->AudioCallback(out, size, perfState);
 
 	for (size_t i = 0; i < size; i++)
 	{
@@ -217,11 +267,16 @@ int main(void)
 	patch.SetAudioSampleRate(SaiHandle::Config::SampleRate::SAI_96KHZ);
 	float sampleRate = patch.AudioSampleRate();
 
+    freqctrl.Init(patch.controls[patch.CTRL_1], 0.f, 5.0f, Parameter::LINEAR);
+	finectrl.Init(patch.controls[patch.CTRL_2], 0.f, 0.5f, Parameter::LINEAR);
+    attackctrl.Init(patch.controls[patch.CTRL_3], 0.f, 5.0f, Parameter::LINEAR);
+	decayctrl.Init(patch.controls[patch.CTRL_4], 0.f, 5.0f, Parameter::LINEAR);
+
     InitUi();
     InitUiPages();
 	ui.OpenPage(mainMenu);
 
-	Vosc = new Voscillator(&patch, sampleRate);
+	Vosc = new Voscillator(sampleRate);
 
 	patch.StartAdc();
 	patch.StartAudio(AudioCallback);
@@ -230,5 +285,3 @@ int main(void)
 		ui.Process();
 	}
 }
-
-
