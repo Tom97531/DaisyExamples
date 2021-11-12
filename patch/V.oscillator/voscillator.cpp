@@ -1,11 +1,9 @@
 #include "voscillator.h"
 
-Voscillator::Voscillator(DaisyPatch *patch, float sampleRate):
-    m_patch(patch),
+Voscillator::Voscillator(float sampleRate):
     sampleRate(sampleRate)
 {
-	freqctrl.Init(patch->controls[patch->CTRL_1], 0.f, 5.0f, Parameter::LINEAR);
-	finectrl.Init(patch->controls[patch->CTRL_2], 0.f, 0.5f, Parameter::LINEAR);
+	adsrEnv.Init(sampleRate);
 
 	for(uint i=0 ; i<NB_OSC ; i++){
 		osc[i].Init(sampleRate);
@@ -15,13 +13,13 @@ Voscillator::Voscillator(DaisyPatch *patch, float sampleRate):
 	click = 0;
 }
 
-void Voscillator::AudioCallback(AudioHandle::OutputBuffer out, size_t size)
+void Voscillator::AudioCallback(AudioHandle::OutputBuffer out, size_t size, performaceState state)
 {
 	float sig;
 	uint32_t currentOsc;
 
 	// Process 1V/Octave input
-	mainFreq = (freqctrl.Process() + finectrl.Process());
+	mainFreq = (state.pitch + state.finePitch);
 	mainFreq = powf(2.f, mainFreq) * 55; // get freq from V
 
 	mainSmpNb = sampleRate / mainFreq;
@@ -33,7 +31,7 @@ void Voscillator::AudioCallback(AudioHandle::OutputBuffer out, size_t size)
 		click++;
 		if(click >= mainSmpNb){
 			click = 0;
-			if(hardSync){
+			if(state.hardSync){
 				for(uint j=0 ; j<NB_OSC ; j++){
 					osc[j].Reset();
 				}
@@ -50,5 +48,21 @@ void Voscillator::AudioCallback(AudioHandle::OutputBuffer out, size_t size)
 				out[1][i] = sig * osc[j].GetPan();
 			}
 		}
+
+		if(state.envType == ADSR){
+			adsrEnv.SetAttackTime(state.attack);
+			adsrEnv.SetDecayTime(state.decay);
+			adsrEnv.SetSustainLevel(state.sustain);
+			adsrEnv.SetReleaseTime(state.release);
+			out[0][i] = out[0][i] * adsrEnv.Process(state.gate);
+			out[1][i] = out[1][i] * adsrEnv.Process(state.gate);
+		}else if(state.envType == AD){
+			adsrEnv.SetAttackTime(state.attack);
+			adsrEnv.SetDecayTime(state.decay);
+			adsrEnv.SetSustainLevel(0);
+			adsrEnv.SetReleaseTime(state.decay);
+			out[0][i] = out[0][i] * adsrEnv.Process(state.gate);
+			out[1][i] = out[1][i] * adsrEnv.Process(state.gate);
+		}// else don't use envelope generator
 	}
 }
