@@ -18,6 +18,7 @@ using namespace daisysp;
 class Voscillator{
     public:
         enum envelopeType{OFF=0, AD, ADSR};
+        
         class performaceState{
             public:
                 float pitch;
