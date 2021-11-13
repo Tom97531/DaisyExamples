@@ -47,11 +47,7 @@ class microsc{
         }
 
         void SetFineTune(float ft){
-            if(ft != 0){
-                fineTune = powf(2.f, ft) * 55; // get freq from V;
-            }else{
-                fineTune = 0;
-            }
+            fineTune = (currentFreq / 12) * ft;
         }
 
         float Process(){
