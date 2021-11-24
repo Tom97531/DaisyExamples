@@ -136,6 +136,26 @@ void AudioCallback(AudioHandle::InputBuffer in, AudioHandle::OutputBuffer out, s
 	}
 }
 
+int timingClock = 0;
+void HandleMidiMessage(MidiEvent m)
+{
+    switch(m.type)
+    {
+        case SystemRealTime:
+            if(m.srt_type == TimingClock){
+                timingClock++;
+                if(timingClock == 24){
+                    dsy_gpio_write(&hw.gate_output, true);
+                    timingClock = 0;
+                }else{
+                    dsy_gpio_write(&hw.gate_output, false);
+                }
+            }
+        break;
+        default: break;
+    }
+}
+
 int main(void)
 {
 	hw.Init();
@@ -152,9 +172,16 @@ int main(void)
 	ui.OpenPage(mainMenu);
 
 	hw.StartAdc();
-	hw.StartAudio(AudioCallback);
+    hw.midi.StartReceive();
+    hw.StartAudio(AudioCallback);
 
 	while(1) {
 		ui.Process();
+        // Handle MIDI Events
+        hw.midi.Listen();
+        while(hw.midi.HasEvents())
+        {
+            HandleMidiMessage(hw.midi.PopEvent());
+        }
 	}
 }
