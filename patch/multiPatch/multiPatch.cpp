@@ -4,6 +4,7 @@
 
 #include "NoiseFx.h"
 #include "wavefold.h"
+#include "quantizer.h"
 #include "midiClock.h"
 
 using namespace daisy;
@@ -15,6 +16,7 @@ Processor *CTRL12Processor, *CTRL3Processor, *CTRL4Processor;
 
 NoiseFx noiseProcessor;
 wavefold wavefoldProcessor;
+quantizer quantizerProcessor;
 midiClock defaultClock;
 
 daisy::UI ui;
@@ -39,7 +41,7 @@ AbstractMenu::ItemConfig CTRL4MenuItems[kNumCTRL4MenuItems];
 const int                kNumFxMenuItems = 3;
 AbstractMenu::ItemConfig fxMenuItems[kNumFxMenuItems];
 
-const char* fxType[] = {"Noise", "Wavefolder", "Bit Crush", "Quantizer"};
+const char* fxType[] = {"Noise", "Wavefolder", "Quantizer", "Bit Crush"};
 
 MappedStringListValue fx3TypeValue(fxType, 4, 0);
 
@@ -127,7 +129,11 @@ void AudioCallback(AudioHandle::InputBuffer in, AudioHandle::OutputBuffer out, s
     }else if(fx3TypeValue.GetIndex() == 1){
         CTRL3MenuItems[1].asOpenUiPageItem.pageToOpen = &wavefoldProcessor.menu;
         CTRL3Processor = &wavefoldProcessor;
+    }else if(fx3TypeValue.GetIndex() == 2){
+        CTRL3MenuItems[1].asOpenUiPageItem.pageToOpen = &quantizerProcessor.menu;
+        CTRL3Processor = &quantizerProcessor;
     }
+
 
 	for (size_t i = 0; i < size; i++)
 	{
@@ -156,6 +162,7 @@ int main(void)
 	hw.StartAdc();
     hw.StartAudio(AudioCallback);
     defaultClock.Init(&hw);
+    quantizerProcessor.Init(&hw);
     noiseProcessor.Init(sampleRate);
 
 	while(1) {

@@ -27,7 +27,7 @@ class NoiseFx : public Processor
         NoiseFx(/* args */);
         ~NoiseFx();
 
-        void Init(float sapleRate);
+        void Init(float sampleRate);
         float Process(float in, float ctrl);
 
         FullScreenItemMenu menu;
