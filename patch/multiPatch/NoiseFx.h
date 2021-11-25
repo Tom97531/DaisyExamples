@@ -15,7 +15,10 @@ class NoiseFx : public Processor
 {
     private:
         WhiteNoise wn;
-        
+        Svf filt;
+
+        float sr;
+
         static const int kNumNoiseMenuItems = 2;
         AbstractMenu::ItemConfig noiseMenuItems[kNumNoiseMenuItems];
         
@@ -23,10 +26,17 @@ class NoiseFx : public Processor
     public:
         NoiseFx(/* args */);
         ~NoiseFx();
+
+        void Init(float sapleRate);
         float Process(float in, float ctrl);
 
         FullScreenItemMenu menu;
 };
+
+void NoiseFx::Init(float sampleRate){
+    sr = sampleRate;
+    filt.Init(sr);
+}
 
 NoiseFx::NoiseFx(/* args */)
 {
@@ -50,5 +60,8 @@ NoiseFx::~NoiseFx()
 }
 
 float NoiseFx::Process(float in, float ctrl){
-    return wn.Process();
+    
+    filt.SetFreq(ctrl*(sr/8));
+    filt.Process(wn.Process());
+    return filt.Low();
 }
