@@ -156,6 +156,7 @@ int main(void)
 	hw.StartAdc();
     hw.StartAudio(AudioCallback);
     defaultClock.Init(&hw);
+    noiseProcessor.Init(sampleRate);
 
 	while(1) {
 		ui.Process();
