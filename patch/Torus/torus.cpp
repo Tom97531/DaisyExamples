@@ -49,7 +49,7 @@ Part            part;
 StringSynthPart string_synth;
 Strummer        strummer;
 
-const int                kNumMainMenuItems = 4;
+const int                kNumMainMenuItems = 5;
 AbstractMenu::ItemConfig mainMenuItems[kNumMainMenuItems];
 const int                kNumControlEditMenuItems = 5;
 AbstractMenu::ItemConfig controlEditMenuItems[kNumControlEditMenuItems];
@@ -88,6 +88,8 @@ bool noteIn;
 //easter egg toggle
 bool easterEggOn;
 
+MappedFloatValue outputGainValue = MappedFloatValue(0.0, 3.0, 1.0);
+
 int oldModel = 0;
 
 void InitUi()
@@ -103,7 +105,7 @@ void InitUi()
     oledDisplayDescriptor.id_     = canvasOledDisplay; // the unique ID
     oledDisplayDescriptor.handle_ = &hw.display;   // a pointer to the display
     oledDisplayDescriptor.updateRateMs_      = 50; // 50ms == 20Hz
-    oledDisplayDescriptor.screenSaverTimeOut = 0;  // display always on
+    oledDisplayDescriptor.screenSaverTimeOut = 60000;  // display always on
     oledDisplayDescriptor.clearFunction_     = &ClearCanvas;
     oledDisplayDescriptor.flushFunction_     = &FlushCanvas;
 
@@ -134,6 +136,10 @@ void InitUiPages()
     mainMenuItems[3].type = daisy::AbstractMenu::ItemType::checkboxItem;
     mainMenuItems[3].text = "Easter Egg";
     mainMenuItems[3].asCheckboxItem.valueToModify = &easterEggOn;
+
+    mainMenuItems[4].type = daisy::AbstractMenu::ItemType::valueItem;
+    mainMenuItems[4].text = "Out gain";
+    mainMenuItems[4].asMappedValueItem.valueToModify = &outputGainValue;
 
     mainMenu.Init(mainMenuItems, kNumMainMenuItems);
 
@@ -303,8 +309,8 @@ void AudioCallback(AudioHandle::InputBuffer  in,
 
     for(size_t i = 0; i < size; i++)
     {
-        out[0][i] = output[i];
-        out[1][i] = aux[i];
+        out[0][i] = output[i] * outputGainValue.Get();
+        out[1][i] = aux[i] * outputGainValue.Get();
     }
 }
 
